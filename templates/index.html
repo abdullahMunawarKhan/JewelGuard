@@ -1,0 +1,353 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Jewellery Shop Security Dashboard</title>
+
+  <style>
+
+    :root { color-scheme: dark; --bg:#0b1020; --panel:#131b2f; --line:#27334d; --muted:#9caac2; --text:#edf3ff; --green:#35d49a; --red:#ff5c6c; --amber:#ffc857; }
+
+    * { box-sizing:border-box; }
+
+    body { margin:0; background:radial-gradient(ellipse at top,#172541 0,#0b1020 55%); color:var(--text); font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
+
+    .wrap { max-width:1120px; margin:auto; padding:28px 18px 44px; }
+
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+
+    h1 { margin:0; font-size:clamp(1.4rem,3vw,2rem); letter-spacing:-.03em; }
+
+    .sub { color:var(--muted); margin-top:5px; }
+
+    .pill { border:1px solid var(--line); background:#111a2c; padding:7px 11px; border-radius:999px; color:var(--muted); font-size:.85rem; }
+
+    .grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:14px; }
+
+    .card { background:rgba(19,27,47,.94); border:1px solid var(--line); border-radius:16px; padding:18px; min-width:0; box-shadow:0 12px 32px #0002; }
+
+    .span-3 { grid-column:span 3; } .span-4 { grid-column:span 4; } .span-5 { grid-column:span 5; } .span-7 { grid-column:span 7; } .span-8 { grid-column:span 8; } .span-12 { grid-column:span 12; }
+
+    .label { color:var(--muted); font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; }
+
+    .value { font-size:1.65rem; font-weight:750; margin-top:7px; letter-spacing:-.03em; }
+
+    .hint { color:var(--muted); font-size:.88rem; margin-top:5px; }
+
+    .status { display:inline-flex; align-items:center; gap:9px; font-weight:700; font-size:1.25rem; margin-top:8px; }
+
+    .dot { width:10px; height:10px; border-radius:50%; background:var(--amber); box-shadow:0 0 12px currentColor; }
+
+    .safe .dot { background:var(--green); color:var(--green); } .danger .dot { background:var(--red); color:var(--red); }
+
+    button,select { background:#202d47; border:1px solid #394966; color:var(--text); border-radius:10px; padding:10px 12px; font:inherit; }
+
+    button { cursor:pointer; font-weight:650; } button.primary { background:#2a6bdf; border-color:#397de9; } button:disabled { opacity:.45; cursor:not-allowed; }
+
+    .controls { display:flex; gap:8px; flex-wrap:wrap; margin-top:13px; } select { min-width:150px; flex:1; }
+
+    .chart { height:180px; display:flex; align-items:end; gap:5px; padding-top:20px; border-bottom:1px solid var(--line); }
+
+    .bar { flex:1; min-width:4px; background:linear-gradient(180deg,#ff6b7a,#a52e51); border-radius:5px 5px 0 0; min-height:3px; transition:height .25s; }
+
+    .chart-empty { color:var(--muted); align-self:center; width:100%; text-align:center; }
+
+    .table-wrap { overflow:auto; }
+
+    table { width:100%; border-collapse:collapse; text-align:left; min-width:500px; }
+
+    th,td { padding:11px 9px; border-bottom:1px solid var(--line); font-size:.9rem; }
+
+    th { color:var(--muted); font-weight:600; }
+
+    .tag { display:inline-block; border-radius:6px; padding:3px 7px; font-size:.78rem; font-weight:750; background:#24324a; color:#c5d5ef; }
+
+    .tag.ALERT { background:#4a202b; color:#ff9aa5; } .tag.NORMAL { background:#143b32; color:#80edc5; } .tag.ERROR { background:#4b3820; color:#ffd581; }
+
+    .footer { color:var(--muted); font-size:.82rem; margin-top:16px; }
+
+    #notice { margin-top:10px; color:var(--amber); font-size:.9rem; }
+
+    @media(max-width:760px) { .span-3,.span-4,.span-5,.span-7,.span-8 { grid-column:span 12; } .wrap { padding:18px 12px 30px; } }
+
+  </style>
+
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <header>
+
+    <div>
+
+      <h1>Jewellery Shop Security</h1>
+
+      <div class="sub">Local motion monitoring · Arduino Uno · USB serial</div>
+
+    </div>
+
+    <div class="pill">LOCAL DASHBOARD · NO CLOUD</div>
+
+  </header>
+
+
+
+  <div class="grid">
+
+    <section class="card span-5">
+
+      <div class="label">Protected area status</div>
+
+      <div id="motionStatus" class="status safe"><span class="dot"></span><span id="motionText">Waiting for Arduino</span></div>
+
+      <div class="hint" id="statusHint">Connect the Arduino to begin monitoring.</div>
+
+      <div class="controls">
+
+        <select id="portSelect" aria-label="Serial port"><option value="">Loading ports…</option></select>
+
+        <button id="refreshPorts">Refresh</button>
+
+        <button id="connectBtn" class="primary">Connect</button>
+          <button id="soundBtn" type="button">Enable Laptop Sound</button>
+
+      </div>
+
+      <div id="notice"></div>
+      <div class="hint" id="soundStatus" role="status">Laptop sound is disabled. Click “Enable Laptop Sound” to allow browser audio.</div>
+
+    </section>
+
+
+
+    <section class="card span-3">
+
+      <div class="label">Connection</div>
+
+      <div class="value" id="connectionValue">Disconnected</div>
+
+      <div class="hint" id="connectionHint">Select the Arduino serial port.</div>
+
+    </section>
+
+    <section class="card span-4">
+
+      <div class="label">Alarm state</div>
+
+      <div class="value" id="alarmValue">OFF</div>
+
+      <div class="hint">The Arduino controls the physical buzzer and LEDs.</div>
+
+    </section>
+
+
+
+    <section class="card span-4">
+
+      <div class="label">Motion alerts</div>
+
+      <div class="value" id="alertCount">0</div>
+
+      <div class="hint">Alerts received this session</div>
+
+    </section>
+
+    <section class="card span-8">
+
+      <div class="label">Recent motion activity</div>
+
+      <div class="chart" id="chart"><div class="chart-empty">Motion events will appear here.</div></div>
+
+      <div class="hint">Each bar represents a recent motion detection.</div>
+
+    </section>
+
+
+
+    <section class="card span-12">
+
+      <div class="label">Event history</div>
+
+      <div class="table-wrap" style="margin-top:10px">
+
+        <table>
+
+          <thead><tr><th>Time</th><th>Event</th><th>Details</th></tr></thead>
+
+          <tbody id="eventsBody"><tr><td colspan="3" class="hint">No events received yet.</td></tr></tbody>
+
+        </table>
+
+      </div>
+
+      <div class="footer">Events are held in memory while this Python app is running; they are not permanently stored.</div>
+
+    </section>
+
+  </div>
+
+  <div class="footer">Prototype only: this dashboard is not a certified security system. Keep the local buzzer independent of the laptop and network.</div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let seenEventKeys = new Set();
+let eventsInitialized = false;
+let audioEnabled = false;
+let audioContext = null;
+
+async function getJson(url, options={}) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  return data;
+}
+
+async function enableLaptopSound() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) throw new Error('Web Audio is not supported by this browser.');
+    if (!audioContext) audioContext = new AudioContextClass();
+    await audioContext.resume();
+    audioEnabled = true;
+    $('soundBtn').textContent = 'Disable Laptop Sound';
+    $('soundStatus').textContent = 'Laptop sound enabled. New detection alerts will play through your laptop speakers.';
+    $('soundStatus').style.color = 'var(--green)';
+    playLaptopAlarm(true); // confirmation tone
+  } catch (e) {
+    audioEnabled = false;
+    $('soundStatus').textContent = `Could not enable laptop sound: ${e.message}`;
+    $('soundStatus').style.color = 'var(--amber)';
+  }
+}
+
+function disableLaptopSound() {
+  audioEnabled = false;
+  $('soundBtn').textContent = 'Enable Laptop Sound';
+  $('soundStatus').textContent = 'Laptop sound is disabled. Click “Enable Laptop Sound” to enable it.';
+  $('soundStatus').style.color = 'var(--muted)';
+}
+
+function playLaptopAlarm(testTone=false) {
+  if (!audioEnabled || !audioContext) return;
+  if (audioContext.state === 'suspended') audioContext.resume();
+  const now = audioContext.currentTime;
+  const beeps = testTone ? [{at:0, freq:880, duration:0.12}] : [
+    {at:0, freq:880, duration:0.18}, {at:0.28, freq:660, duration:0.22}
+  ];
+  for (const beep of beeps) {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(beep.freq, now + beep.at);
+    gain.gain.setValueAtTime(0.0001, now + beep.at);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + beep.at + 0.015);
+    gain.gain.setValueAtTime(0.22, now + beep.at + Math.max(0.02, beep.duration - 0.025));
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + beep.at + beep.duration);
+    oscillator.connect(gain); gain.connect(audioContext.destination);
+    oscillator.start(now + beep.at); oscillator.stop(now + beep.at + beep.duration + 0.01);
+    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+  }
+}
+
+$('soundBtn').addEventListener('click', () => audioEnabled ? disableLaptopSound() : enableLaptopSound());
+
+async function refreshPorts() {
+  try {
+    const ports = await getJson('/api/ports');
+    const select = $('portSelect'); const previous = select.value;
+    select.innerHTML = '';
+    if (!ports.length) {
+      select.add(new Option('No serial ports found', ''));
+      $('notice').textContent = 'Check the USB cable and Arduino driver, then refresh.'; return;
+    }
+    ports.forEach(p => select.add(new Option(`${p.device} — ${p.description}`, p.device)));
+    if (ports.some(p => p.device === previous)) select.value = previous;
+    $('notice').textContent = '';
+  } catch (e) { $('notice').textContent = `Could not list ports: ${e.message}`; }
+}
+
+function formatTime(value) {
+  try { return new Date(value).toLocaleString(); } catch { return value || '—'; }
+}
+
+async function refreshStatus() {
+  try {
+    const s = await getJson('/api/status');
+    $('connectionValue').textContent = s.connected ? 'Connected' : 'Disconnected';
+    $('connectionHint').textContent = s.connected ? `${s.port} · 9600 baud` : (s.error || 'Select the Arduino serial port.');
+    $('connectBtn').disabled = s.connected;
+    $('connectBtn').textContent = s.connected ? 'Connected' : 'Connect';
+    const status = $('motionStatus');
+    status.className = 'status ' + (s.motion ? 'danger' : (s.connected ? 'safe' : ''));
+    $('motionText').textContent = s.motion ? 'MOTION DETECTED' : (s.connected ? 'AREA CLEAR' : 'NOT CONNECTED');
+    $('statusHint').textContent = s.motion ? 'Motion detected by the PIR sensor. Check the protected area.' : (s.connected ? `Last Arduino message: ${s.last_message || 'waiting…'}` : 'Connect the Arduino to begin monitoring.');
+    $('alarmValue').textContent = s.alarm ? 'ON' : 'OFF';
+  } catch (e) { $('notice').textContent = `Status error: ${e.message}`; }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function eventKey(e) { return String(e.id ?? `${e.time ?? ''}|${e.type ?? ''}|${e.message ?? ''}`); }
+
+async function refreshEvents() {
+  try {
+    const events = await getJson('/api/events');
+    const alerts = events.filter(e => e.type === 'ALERT');
+    $('alertCount').textContent = alerts.length;
+    // First poll only establishes a baseline, so old events do not sound again on page load.
+    if (!eventsInitialized) {
+      events.forEach(e => seenEventKeys.add(eventKey(e)));
+      eventsInitialized = true;
+    } else {
+      let newAlertFound = false;
+      events.forEach(e => {
+        const key = eventKey(e);
+        if (!seenEventKeys.has(key)) {
+          seenEventKeys.add(key);
+          if (e.type === 'ALERT') newAlertFound = true;
+        }
+      });
+      if (newAlertFound) playLaptopAlarm();
+    }
+    if (seenEventKeys.size > 1000) seenEventKeys = new Set(events.map(eventKey));
+
+    const tbody = $('eventsBody');
+    if (!events.length) tbody.innerHTML = '<tr><td colspan="3" class="hint">No events received yet.</td></tr>';
+    else tbody.innerHTML = events.slice(0,100).map(e => `<tr><td>${escapeHtml(formatTime(e.time))}</td><td><span class="tag ${escapeHtml(e.type)}">${escapeHtml(e.type)}</span></td><td>${escapeHtml(e.message)}</td></tr>`).join('');
+
+    const motionEvents = alerts.slice(0,30).reverse(); const chart = $('chart');
+    if (!motionEvents.length) chart.innerHTML = '<div class="chart-empty">Motion events will appear here.</div>';
+    else chart.innerHTML = motionEvents.map((e,i) => `<div class="bar" title="${escapeHtml(formatTime(e.time))}" style="height:${25 + ((i*37)%75)}%"></div>`).join('');
+  } catch (e) { $('notice').textContent = `Event error: ${e.message}`; }
+}
+
+$('refreshPorts').addEventListener('click', refreshPorts);
+$('connectBtn').addEventListener('click', async () => {
+  const port = $('portSelect').value;
+  if (!port) { $('notice').textContent = 'Select a serial port first.'; return; }
+  try {
+    const result = await getJson('/api/connect', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({port})});
+    $('notice').textContent = result.message; setTimeout(refreshStatus, 500);
+  } catch(e) { $('notice').textContent = e.message; }
+});
+
+refreshPorts(); refreshStatus(); refreshEvents();
+setInterval(refreshStatus, 1000);
+setInterval(refreshEvents, 700);
+setInterval(refreshPorts, 10000);
+</script>
+
+</body>
+
+</html>
